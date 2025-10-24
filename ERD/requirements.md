@@ -33,7 +33,9 @@ It outlines the tables, attributes, constraints, and relationships that define t
 * `host_id`: Foreign Key, references `User(user_id)`
 * `name`: VARCHAR, **NOT NULL**
 * `description`: TEXT, **NOT NULL**
-* `location`: VARCHAR, **NOT NULL**
+* `country`: VARCHAR, **NOT NULL**
+* `city`: VARCHAR, **NOT NULL**
+* `address`: VARCHAR, **NOT NULL**
 * `pricepernight`: DECIMAL, **NOT NULL**
 * `created_at`: TIMESTAMP, **DEFAULT CURRENT_TIMESTAMP**
 * `updated_at`: TIMESTAMP, **ON UPDATE CURRENT_TIMESTAMP**
