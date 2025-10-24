@@ -47,6 +47,21 @@ It outlines the tables, attributes, constraints, and relationships that define t
 
 ---
 
+### **Property_Image**
+
+* `image_id`: Primary Key, UUID, Indexed
+* `property_id`: Foreign Key, references `Property(property_id)` **ON DELETE CASCADE**
+* `image_path`: TEXT, **NOT NULL**
+* `is_main`: BOOLEAN, **DEFAULT FALSE**, **NOT NULL**
+* `created_at`: TIMESTAMP, **DEFAULT CURRENT_TIMESTAMP**
+
+**Constraints:**
+
+* Foreign key on `property_id`
+* Non-null constraints on `image_path` and `is_main`
+
+---
+
 ### **Booking**
 
 * `booking_id`: Primary Key, UUID, Indexed
@@ -130,7 +145,10 @@ It outlines the tables, attributes, constraints, and relationships that define t
 * Primary keys: Indexed automatically
 * Additional indexes on:
 
-  * `User.email`
-  * `Property.property_id`
-  * `Booking.property_id`, `Booking.booking_id`
-  * `Payment.booking_id`
+  * `User.email` (`idx_users_email`)
+  * `Property.host_id` (`idx_properties_host_id`)
+  * `Property.property_id` (`idx_property_images_property_id`)
+  * `Booking.property_id`, `Booking.user_id`, `Booking.status` (`idx_bookings_property_id`, `idx_bookings_user_id`, `idx_bookings_status`)
+  * `Payment.booking_id` (`idx_payments_booking_id`)
+  * `Review.property_id`, `Review.user_id` (`idx_reviews_property_id`, `idx_reviews_user_id`)
+  * `Message.sender_id`, `Message.recipient_id` (`idx_messages_sender_id`, `idx_messages_recipient_id`)
