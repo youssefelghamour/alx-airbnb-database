@@ -1,4 +1,4 @@
-# AirBnB Database Schema DDL
+# Airbnb Clone Database Seeding
 
 PostgreSQL schema for our AirBnB clone, including tables, relationships, constraints, and sample data.
 
