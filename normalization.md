@@ -21,7 +21,7 @@ Our Airbnb database stores each user, property, booking, review, payment, and me
 - Columns like `first_name`, `pricepernight`, and `email` store only one value per cell  
 - Column types are consistent (e.g., `pricepernight` is always DECIMAL)
 
-**Note:** If `Property.location` combines multiple details (city and country) in one column, it would violate 1NF. In that case we should separate the location into different columns: country, city, address.
+**Note:** `Property.location` combines multiple details (city, country and address) in one column, which violates 1NF. So it has been separated into different columns: country, city, address.
 
 **Result:** 1NF satisfied
 
