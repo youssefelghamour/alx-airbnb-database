@@ -1,6 +1,6 @@
 # Indexing for Optimization
 
-This document summarizes the indexing decisions we discussed for Users, Bookings, and Properties tables.
+This document summarizes the indexing decisions for Users, Bookings, and Properties tables.
 
 ## Users Table
 
@@ -75,11 +75,8 @@ CREATE INDEX idx_properties_price_per_night ON properties(pricepernight);
 ```
 
 ```sql
-ANALYZE;
-EXPLAIN SELECT * FROM properties WHERE country = 'CountryX' AND city = 'Metropolis' ORDER BY pricepernight;
-
-
-airbnb_db=# EXPLAIN SELECT * FROM properties WHERE country = 'CountryX' AND city = 'Metropolis' ORDER BY pricepernight;
+airbnb_db=# ANALYZE;
+airbnb_db=# EXPLAIN SELECT * FROM properties WHERE country = 'Country1' AND city = 'City1' ORDER BY pricepernight;
                                                 QUERY PLAN
 ----------------------------------------------------------------------------------------------------------
  Index Scan using idx_properties_price_per_night on properties  (cost=0.41..6464.41 rows=60000 width=118)
