@@ -42,54 +42,71 @@ This document summarizes the indexing decisions for Users, Bookings, and Propert
 
 We tested how indexes improve query speed in PostgreSQL using the **properties** table.
 
-### Before Index
+Running `database_index.sql`:
 
 ```sql
-airbnb_db=# EXPLAIN SELECT * FROM properties WHERE country = 'Country1' AND city = 'City1' ORDER BY pricepernight;
-                                        QUERY PLAN
--------------------------------------------------------------------------------------------
- Sort  (cost=10436.30..10586.30 rows=60000 width=118)
+                                                       QUERY PLAN
+------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=10358.54..10507.32 rows=59510 width=118) (actual time=43.660..55.547 rows=60000 loops=1)
    Sort Key: pricepernight
-   ->  Seq Scan on properties  (cost=0.00..1982.00 rows=60000 width=118)
+   Sort Method: external merge  Disk: 7568kB
+   ->  Seq Scan on properties  (cost=0.00..1974.65 rows=59510 width=118) (actual time=0.018..13.384 rows=60000 loops=1)
          Filter: (((country)::text = 'Country1'::text) AND ((city)::text = 'City1'::text))
+ Planning Time: 0.722 ms
+ Execution Time: 57.501 ms
+(7 rows)
+
+
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+                                                                      QUERY PLAN
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+ Index Scan using idx_properties_pricepernight on properties  (cost=0.41..6464.41 rows=60000 width=118) (actual time=0.032..27.396 rows=60000 loops=1)
+   Filter: (((country)::text = 'Country1'::text) AND ((city)::text = 'City1'::text))
+ Planning Time: 0.409 ms
+ Execution Time: 28.544 ms
 (4 rows)
 ```
 
-**Result:** PostgreSQL scanned the entire table (sequential scan). This is slow when the table has many rows.
+### Before Index
+
+```sql
+EXPLAIN ANALYZE SELECT * FROM properties WHERE country = 'Country1' AND city = 'City1' ORDER BY pricepernight;
+```
+
+**Result:** PostgreSQL scanned the entire table (sequential scan). This is slow when the table has many rows. Sorting required extra disk space.
+- **Rows:** `60000`
+- **Execution Time:** `57.501 ms`
+- **Sort Disk Usage:** `7568 kB`
 
 ---
 
 ### After Adding Indexes
 
-Running `database_index.sql` to create the new indexes:
-```
-psql -U postgres -d airbnb_db -f .\database_index.sql
-```
-
-Indexes added:
-
 ```sql
 CREATE INDEX idx_properties_country ON properties(country);
 CREATE INDEX idx_properties_city ON properties(city);
 CREATE INDEX idx_properties_price_per_night ON properties(pricepernight);
+
+EXPLAIN ANALYZE SELECT * FROM properties WHERE country = 'Country1' AND city = 'City1' ORDER BY pricepernight;
 ```
 
-```sql
-airbnb_db=# ANALYZE;
-airbnb_db=# EXPLAIN SELECT * FROM properties WHERE country = 'Country1' AND city = 'City1' ORDER BY pricepernight;
-                                                QUERY PLAN
-----------------------------------------------------------------------------------------------------------
- Index Scan using idx_properties_price_per_night on properties  (cost=0.41..6464.41 rows=60000 width=118)
-   Filter: (((country)::text = 'Country1'::text) AND ((city)::text = 'City1'::text))
-(2 rows)
-```
-
-**Result:** PostgreSQL used the index instead of scanning all rows. This confirms the query became faster and more efficient.
+**Result:** PostgreSQL used the index instead of scanning all rows. This confirms the query became faster and more efficient: Query time was reduced by ~50%.
+- **Rows:** `60000`
+- **Execution Time:** `28.544 ms`
 
 
 ## Conclusion
 
-- **Before indexing**, the query cost was around `10586` because PostgreSQL had to scan the entire table.
-- **After indexing**, the cost dropped to about `6464`, meaning the query became faster and more efficient.
+- **Before indexing:**  
+    - Sequential scan on all 60,000 rows  
+    - Execution time: 57.5 ms  
+    - Sorting required extra disk space (7,568 kB)  
 
-PostgreSQL used the pricepernight index since it helped both with filtering and sorting, giving the best overall performance.
+- **After indexing:**  
+    - Index scan on `pricepernight`  
+    - Execution time: 28.5 ms (~50% faster)  
+    - Query efficiently filtered and sorted rows without scanning the full table  
+
+Adding an index on the column used for sorting and filtering (`pricepernight`) drastically improves query performance for large tables.
