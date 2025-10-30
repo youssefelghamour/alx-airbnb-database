@@ -13,8 +13,7 @@ JOIN payments AS pay
 -- =================================================================
 -- A query plan for the above query to analyze its performance
 -- =================================================================
-ANALYZE;
-EXPLAIN SELECT b.*, u.*, p.*, pay.*
+EXPLAIN ANALYZE SELECT b.*, u.*, p.*, pay.*
 FROM bookings b
 JOIN users AS u
     ON b.user_id = u.user_id
@@ -52,8 +51,7 @@ LEFT JOIN payments AS pay
 -- =================================================================
 -- A query plan for the optimized query to analyze its performance
 -- =================================================================
-ANALYZE;
-EXPLAIN SELECT 
+EXPLAIN ANALYZE SELECT 
     b.start_date,
     b.end_date,
     b.total_price,
@@ -104,8 +102,7 @@ WHERE b.total_price > 800 AND b.status = 'confirmed';
 -- =================================================================
 -- A query plan for the even more optimized query to analyze its performance
 -- =================================================================
-ANALYZE;
-EXPLAIN SELECT 
+EXPLAIN ANALYZE SELECT 
     b.start_date,
     b.end_date,
     b.total_price,
@@ -125,4 +122,4 @@ JOIN properties AS p
     ON b.property_id = p.property_id
 LEFT JOIN payments AS pay
     ON b.booking_id = pay.booking_id
-WHERE b.total_price > 5000 AND b.status = 'confirmed';
+WHERE b.total_price > 800 AND b.status = 'confirmed';
