@@ -129,12 +129,99 @@ ANALYZE
 - Execution cost reduced  
 - Width reduced  
 
+---
+
+## FILTERED QUERY (USING WHERE CONDITIONS)
+
+Query selects specific columns and applies filters to reduce scanned rows.
+
+```sql
+ANALYZE;
+EXPLAIN SELECT 
+    b.start_date,
+    b.end_date,
+    b.total_price,
+    b.status,
+    u.first_name,
+    u.last_name,
+    u.email,
+    p.name AS property_name,
+    p.city,
+    p.country,
+    pay.amount,
+    pay.payment_method
+FROM bookings b
+JOIN users AS u
+    ON b.user_id = u.user_id
+JOIN properties AS p
+    ON b.property_id = p.property_id
+LEFT JOIN payments AS pay
+    ON b.booking_id = pay.booking_id
+WHERE b.total_price > 800 AND b.status = 'confirmed';
+```
+
+**Result:**
+
+```sql
+ANALYZE
+                                                   QUERY PLAN
+----------------------------------------------------------------------------------------------------------------
+ Nested Loop  (cost=2827.57..5572.21 rows=12439 width=100)
+   ->  Hash Join  (cost=2827.15..5259.44 rows=12439 width=87)
+         Hash Cond: (b.user_id = u.user_id)
+         ->  Hash Right Join  (cost=2789.65..5189.16 rows=12439 width=70)
+               Hash Cond: (pay.booking_id = b.booking_id)
+               ->  Seq Scan on payments pay  (cost=0.00..2137.00 rows=100000 width=31)
+               ->  Hash  (cost=2634.16..2634.16 rows=12439 width=71)
+                     ->  Bitmap Heap Scan on bookings b  (cost=547.65..2634.16 rows=12439 width=71)
+                           Recheck Cond: (status = 'confirmed'::booking_status)
+                           Filter: (total_price > '800'::numeric)
+                           ->  Bitmap Index Scan on idx_bookings_status  (cost=0.00..544.55 rows=50167 width=0)
+                                 Index Cond: (status = 'confirmed'::booking_status)
+         ->  Hash  (cost=25.00..25.00 rows=1000 width=49)
+               ->  Seq Scan on users u  (cost=0.00..25.00 rows=1000 width=49)
+   ->  Memoize  (cost=0.42..0.91 rows=1 width=45)
+         Cache Key: b.property_id
+         Cache Mode: logical
+         ->  Index Scan using properties_pkey on properties p  (cost=0.41..0.90 rows=1 width=45)
+               Index Cond: (property_id = b.property_id)
+(19 rows)
+```
+
+**Observations:**
+
+- Filters on `total_price` and `status` reduce rows from 100,000 to 12,439  
+- Bitmap Index Scan used on `status` (`idx_bookings_status`) speeds up filtering  
+- Nested Loops and Hash Joins now process fewer rows: faster execution  
+- Width remains `100` as we still select specific columns  
+- LEFT JOIN on payments preserves all bookings even without a payment  
+
+**Query Plan Highlights:**
+
+- Bitmap Index Scan on bookings status  
+- Nested Loop over Hash Joins with fewer rows  
+- Index Scan on properties  
+- Execution cost reduced: `2827..5572`  
+- Query is much faster due to filtering  
+
+**Takeaway:** Adding meaningful filters drastically reduces scanned rows and execution cost, making the query scale much better.
 
 ## Summary
 
-- Selecting only needed columns drastically reduces memory usage and execution cost  
-- Joins on indexed columns are used, but indexes mainly help for filters, not full table scans  
-- Hash Joins and Nested Loops are efficient for combining tables but scanning large tables adds cost
-- If we used filtering PostgreSQL will use the indexes by adding WHERE clause on the Primary and Foreign Keys, which would make the query faster.
-- Width went down from `335` to `100` when selecting specific columns instead of *. Less data per row moves in memory.
-- Cost went down from `4891..13279` to `3424..9898`. So the second query is cheaper and should run faster.
+- **Step 1 – Select specific columns instead of `*`:**  
+    - Width reduced from `335` to `100`, less data moved per row.  
+    - Execution cost dropped from `4891..13279` to `3424..9898`.  
+    - Index used: only `properties_pkey` on properties table.  
+
+- **Step 2 – Add filtering with `WHERE` clause (`b.total_price > 800 AND b.status = 'confirmed'`):**  
+    - Further reduced rows scanned.  
+    - Execution cost dropped from `3424..9898` to `2827..5572`.  
+    - Width remains `100`.  
+    - Indexes used:  
+        - `properties_pkey` on properties (PK)  
+        - `idx_bookings_status` on bookings (for status filter)  
+
+- **Takeaway:**  
+    - Selecting only needed columns and applying meaningful filters drastically reduces memory usage, scanned rows, and overall execution cost.  
+    - Joins on indexed columns are efficient, but indexes mainly speed up filtering rather than full table joins.  
+    - PostgreSQL now scans fewer rows on bookings, properties, and payments, making the final query much faster and more scalable.

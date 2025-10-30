@@ -24,6 +24,7 @@ JOIN payments AS pay
     ON b.booking_id = pay.booking_id;
 
 
+
 -- =================================================================
 -- An optimized version of the above query
 -- =================================================================
@@ -47,7 +48,6 @@ JOIN properties AS p
     ON b.property_id = p.property_id
 LEFT JOIN payments AS pay
     ON b.booking_id = pay.booking_id;
-
 
 -- =================================================================
 -- A query plan for the optimized query to analyze its performance
@@ -73,3 +73,56 @@ JOIN properties AS p
     ON b.property_id = p.property_id
 LEFT JOIN payments AS pay
     ON b.booking_id = pay.booking_id;
+
+
+
+-- =================================================================
+-- An even more optimized version of the above query with specific columns with filters
+-- =================================================================
+SELECT 
+    b.start_date,
+    b.end_date,
+    b.total_price,
+    b.status,
+    u.first_name,
+    u.last_name,
+    u.email,
+    p.name AS property_name,
+    p.city,
+    p.country,
+    pay.amount,
+    pay.payment_method
+FROM bookings b
+JOIN users AS u
+    ON b.user_id = u.user_id
+JOIN properties AS p
+    ON b.property_id = p.property_id
+LEFT JOIN payments AS pay
+    ON b.booking_id = pay.booking_id
+WHERE b.total_price > 800 AND b.status = 'confirmed';
+
+-- =================================================================
+-- A query plan for the even more optimized query to analyze its performance
+-- =================================================================
+ANALYZE;
+EXPLAIN SELECT 
+    b.start_date,
+    b.end_date,
+    b.total_price,
+    b.status,
+    u.first_name,
+    u.last_name,
+    u.email,
+    p.name AS property_name,
+    p.city,
+    p.country,
+    pay.amount,
+    pay.payment_method
+FROM bookings b
+JOIN users AS u
+    ON b.user_id = u.user_id
+JOIN properties AS p
+    ON b.property_id = p.property_id
+LEFT JOIN payments AS pay
+    ON b.booking_id = pay.booking_id
+WHERE b.total_price > 5000 AND b.status = 'confirmed';
