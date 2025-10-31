@@ -1,6 +1,6 @@
 # Monitoring and Refining the Database Performance
 
-This README summarizes the analysis of query performance on the Airbnb database.
+This file summarizes the analysis of query performance on the Airbnb database.
 
 ## 1. Fast Queries Using Indexes
 
